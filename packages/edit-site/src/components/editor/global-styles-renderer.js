@@ -11,7 +11,11 @@ import { __EXPERIMENTAL_STYLE_PROPERTY as STYLE_PROPERTY } from '@wordpress/bloc
 /**
  * Internal dependencies
  */
-import { LINK_COLOR_DECLARATION, PRESET_METADATA } from './utils';
+import {
+	LINK_COLOR_DECLARATION,
+	PRESET_METADATA,
+	ROOT_BLOCK_SELECTOR,
+} from './utils';
 
 function compileStyleValue( uncompiledValue ) {
 	const VARIABLE_REFERENCE_PREFIX = 'var:';
@@ -141,56 +145,86 @@ function getBlockStylesDeclarations( blockStyles = {} ) {
 }
 
 export default ( blockData, tree, type = 'all' ) => {
+	// Can this be converted to a context, as the global context?
+	// See comment in the server.
+	const styles =
+		type === 'all' || type === 'blockStyles'
+			? [ LINK_COLOR_DECLARATION ]
+			: [];
+
+	// Process top-level.
+	if ( type === 'all' || type === 'cssVariables' ) {
+		const declarations = [
+			...getBlockPresetsDeclarations( tree?.settings ),
+			...flattenTree( tree?.settings?.custom, '--wp--custom--', '--' ),
+		];
+		if ( declarations.length > 0 ) {
+			styles.push(
+				`${ ROOT_BLOCK_SELECTOR } { ${ declarations.join( ';' ) } }`
+			);
+		}
+	}
+
+	if ( type === 'all' || type === 'blockStyles' ) {
+		const declarations = getBlockStylesDeclarations( tree?.styles );
+		if ( declarations.length > 0 ) {
+			styles.push(
+				`${ ROOT_BLOCK_SELECTOR } { ${ declarations.join( ';' ) } }`
+			);
+		}
+
+		const presetClasses = getBlockPresetClasses(
+			ROOT_BLOCK_SELECTOR,
+			tree?.settings
+		);
+		if ( presetClasses ) {
+			styles.push( presetClasses );
+		}
+	}
+
+	// Process blocks.
 	return reduce(
 		blockData,
-		( styles, { selector }, context ) => {
+		( accumulator, { blockName, selector } ) => {
 			if ( type === 'all' || type === 'cssVariables' ) {
-				const variableDeclarations = [
+				const declarations = [
 					...getBlockPresetsDeclarations(
-						tree?.settings?.[ context ]
+						tree?.settings?.blocks?.[ blockName ]
 					),
 					...flattenTree(
-						tree?.settings?.[ context ]?.custom,
+						tree?.settings?.blocks?.[ blockName ]?.custom,
 						'--wp--custom--',
 						'--'
 					),
 				];
 
-				if ( variableDeclarations.length > 0 ) {
-					styles.push(
-						`${ selector } { ${ variableDeclarations.join(
-							';'
-						) } }`
+				if ( declarations.length > 0 ) {
+					accumulator.push(
+						`${ selector } { ${ declarations.join( ';' ) } }`
 					);
 				}
 			}
 			if ( type === 'all' || type === 'blockStyles' ) {
-				const blockStyleDeclarations = getBlockStylesDeclarations(
-					tree?.styles?.[ context ]
+				const declarations = getBlockStylesDeclarations(
+					tree?.styles?.blocks?.[ blockName ]
 				);
 
-				if ( blockStyleDeclarations.length > 0 ) {
-					styles.push(
-						`${ selector } { ${ blockStyleDeclarations.join(
-							';'
-						) } }`
+				if ( declarations.length > 0 ) {
+					accumulator.push(
+						`${ selector } { ${ declarations.join( ';' ) } }`
 					);
 				}
 
 				const presetClasses = getBlockPresetClasses(
 					selector,
-					tree?.settings?.[ context ]
+					tree?.settings?.blocks?.[ blockName ]
 				);
 				if ( presetClasses ) {
-					styles.push( presetClasses );
+					accumulator.push( presetClasses );
 				}
 			}
-			return styles;
+			return accumulator;
 		},
-		// Can this be converted to a context, as the global context?
-		// See comment in the server.
-		type === 'all' || type === 'blockStyles'
-			? [ LINK_COLOR_DECLARATION ]
-			: []
+		styles
 	).join( '' );
 };

@@ -169,6 +169,7 @@ export default function GlobalStylesSidebar( {
 	closeLabel,
 } ) {
 	const {
+		root,
 		contexts,
 		getStyle,
 		setStyle,
@@ -177,7 +178,7 @@ export default function GlobalStylesSidebar( {
 	} = useGlobalStylesContext();
 	const [ canRestart, onReset ] = useGlobalStylesReset();
 
-	if ( typeof contexts !== 'object' || ! contexts?.[ ROOT_BLOCK_NAME ] ) {
+	if ( typeof contexts !== 'object' || ! root ) {
 		// No sidebar is shown.
 		return null;
 	}
@@ -226,10 +227,7 @@ export default function GlobalStylesSidebar( {
 					return (
 						<GlobalStylesPanel
 							hasWrapper={ false }
-							context={ {
-								...contexts[ ROOT_BLOCK_NAME ],
-								name: ROOT_BLOCK_NAME,
-							} }
+							context={ root }
 							getStyle={ getStyle }
 							setStyle={ setStyle }
 							getSetting={ getSetting }

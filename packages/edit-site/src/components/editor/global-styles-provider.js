@@ -24,8 +24,6 @@ import { useSelect, useDispatch } from '@wordpress/data';
  * Internal dependencies
  */
 import {
-	ALL_BLOCKS_NAME,
-	ALL_BLOCKS_SELECTOR,
 	ROOT_BLOCK_NAME,
 	ROOT_BLOCK_SELECTOR,
 	ROOT_BLOCK_SUPPORTS,
@@ -35,7 +33,7 @@ import {
 import getGlobalStyles from './global-styles-renderer';
 import { store as editSiteStore } from '../../store';
 
-const EMPTY_CONTENT = { isGlobalStylesUserThemeJSON: true };
+const EMPTY_CONTENT = { isGlobalStylesUserThemeJSON: true, version: 1 };
 const EMPTY_CONTENT_STRING = JSON.stringify( EMPTY_CONTENT );
 
 const GlobalStylesContext = createContext( {
@@ -83,16 +81,7 @@ const extractSupportKeys = ( supports ) => {
 };
 
 const getContexts = ( blockTypes ) => {
-	const result = {
-		[ ROOT_BLOCK_NAME ]: {
-			selector: ROOT_BLOCK_SELECTOR,
-			supports: ROOT_BLOCK_SUPPORTS,
-		},
-		[ ALL_BLOCKS_NAME ]: {
-			selector: ALL_BLOCKS_SELECTOR,
-			supports: [], // by being an empty array, the styles subtree will be ignored
-		},
-	};
+	const result = {};
 
 	// Add contexts from block metadata.
 	blockTypes.forEach( ( blockType ) => {
@@ -107,16 +96,6 @@ const getContexts = ( blockTypes ) => {
 				supports,
 				blockName,
 			};
-		} else if ( hasSupport && typeof blockSelector === 'object' ) {
-			Object.keys( blockSelector ).forEach( ( key ) => {
-				result[ key ] = {
-					selector: blockSelector[ key ].selector,
-					supports,
-					blockName,
-					title: blockSelector[ key ].title,
-					attributes: blockSelector[ key ].attributes,
-				};
-			} );
 		} else if ( hasSupport ) {
 			const suffix = blockName.replace( 'core/', '' ).replace( '/', '-' );
 			result[ blockName ] = {
@@ -145,6 +124,8 @@ export default function GlobalStylesProvider( { children, baseStyles } ) {
 	const { userStyles, mergedStyles } = useMemo( () => {
 		let newUserStyles;
 		try {
+			// TODO: IF USER STYLES AREN'T IN THE LAST VERSION
+			// WE SHOULD MIGRATE THEM.
 			newUserStyles = content ? JSON.parse( content ) : EMPTY_CONTENT;
 		} catch ( e ) {
 			/* eslint-disable no-console */
@@ -177,42 +158,65 @@ export default function GlobalStylesProvider( { children, baseStyles } ) {
 
 	const nextValue = useMemo(
 		() => ( {
+			root: {
+				selector: ROOT_BLOCK_SELECTOR,
+				supports: ROOT_BLOCK_SUPPORTS,
+				name: ROOT_BLOCK_NAME,
+			},
 			contexts,
-			getSetting: ( context, path ) =>
-				get( userStyles?.settings?.[ context ], path ),
-			setSetting: ( context, path, newValue ) => {
+			getSetting: ( blockName, propertyPath ) => {
+				const path =
+					blockName === ROOT_BLOCK_NAME
+						? propertyPath
+						: [ 'blocks', blockName, ...propertyPath ];
+				get( userStyles?.settings, path );
+			},
+			setSetting: ( blockName, propertyPath, newValue ) => {
 				const newContent = { ...userStyles };
-				let contextSettings = newContent?.settings?.[ context ];
-				if ( ! contextSettings ) {
-					contextSettings = {};
-					set( newContent, [ 'settings', context ], contextSettings );
+				const path =
+					blockName === ROOT_BLOCK_NAME
+						? [ 'settings' ]
+						: [ 'settings', 'blocks', blockName ];
+
+				let newSettings = get( newContent, path );
+				if ( ! newSettings ) {
+					newSettings = {};
+					set( newContent, path, newSettings );
 				}
-				set( contextSettings, path, newValue );
+				set( newSettings, propertyPath, newValue );
+
 				setContent( JSON.stringify( newContent ) );
 			},
-			getStyle: ( context, propertyName, origin = 'merged' ) => {
+			getStyle: ( blockName, propertyName, origin = 'merged' ) => {
 				const styleOrigin =
 					'user' === origin ? userStyles : mergedStyles;
 
-				const value = get(
-					styleOrigin?.styles?.[ context ],
-					STYLE_PROPERTY[ propertyName ].value
-				);
-				return getValueFromVariable( mergedStyles, context, value );
+				const propertyPath = STYLE_PROPERTY[ propertyName ].value;
+				const path =
+					blockName === ROOT_BLOCK_NAME
+						? propertyPath
+						: [ 'blocks', blockName, ...propertyPath ];
+
+				const value = get( styleOrigin?.styles, path );
+				return getValueFromVariable( mergedStyles, blockName, value );
 			},
-			setStyle: ( context, propertyName, newValue ) => {
+			setStyle: ( blockName, propertyName, newValue ) => {
 				const newContent = { ...userStyles };
-				let contextStyles = newContent?.styles?.[ context ];
-				if ( ! contextStyles ) {
-					contextStyles = {};
-					set( newContent, [ 'styles', context ], contextStyles );
+				const path =
+					ROOT_BLOCK_NAME === blockName
+						? [ 'styles' ]
+						: [ 'styles', 'blocks', blockName ];
+				let newStyles = get( newContent, path );
+				if ( ! newStyles ) {
+					newStyles = {};
+					set( newContent, path, newStyles );
 				}
 				set(
-					contextStyles,
+					newStyles,
 					STYLE_PROPERTY[ propertyName ].value,
 					getPresetVariable(
 						mergedStyles,
-						context,
+						path,
 						propertyName,
 						newValue
 					)
