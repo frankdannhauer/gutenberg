@@ -144,6 +144,7 @@ export function computeCustomizedAttribute(
 				xfn: block.attributes.rel?.split( ' ' ),
 				classes: block.attributes.className?.split( ' ' ),
 				attr_title: block.attributes.title,
+				object_id: block.attributes?.id,
 			};
 		} else {
 			attributes = {

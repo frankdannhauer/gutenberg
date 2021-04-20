@@ -148,6 +148,7 @@ function convertMenuItemToBlock( menuItem, innerBlocks = [] ) {
 		className: menuItem.classes.join( ' ' ),
 		description: menuItem.description,
 		rel: menuItem.xfn.join( ' ' ),
+		id: menuItem?.object_id,
 		type: menuItem.type,
 	};
 
