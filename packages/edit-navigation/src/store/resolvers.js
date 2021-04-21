@@ -149,7 +149,7 @@ function convertMenuItemToBlock( menuItem, innerBlocks = [] ) {
 		description: menuItem.description,
 		rel: menuItem.xfn.join( ' ' ),
 		id: menuItem?.object_id,
-		type: menuItem.type,
+		type: menuItem.object, // https://core.trac.wordpress.org/browser/tags/5.7.1/src/wp-includes/nav-menu.php#L796
 	};
 
 	return createBlock( 'core/navigation-link', attributes, innerBlocks );
