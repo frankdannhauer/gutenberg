@@ -81,12 +81,17 @@ function ColorPalette( {
 	useEffect( () => {
 		setShouldShowCustomIndicator(
 			shouldShowCustomIndicatorOption &&
-				( ! isGradientSegment || isCustomGradientColor )
+				( ! isGradientSegment ||
+					( isGradientColor &&
+						activeColor &&
+						! ( colors && colors.includes( activeColor ) ) ) )
 		);
 	}, [
 		shouldShowCustomIndicatorOption,
 		isGradientSegment,
-		isCustomGradientColor,
+		activeColor,
+		colors,
+		isGradientColor,
 	] );
 
 	const accessibilityHint = isGradientSegment
