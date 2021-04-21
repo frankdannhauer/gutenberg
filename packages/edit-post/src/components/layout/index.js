@@ -12,17 +12,12 @@ import {
 	UnsavedChangesWarning,
 	EditorNotices,
 	EditorKeyboardShortcutsRegister,
+	store as editorStore,
 } from '@wordpress/editor';
 import { useSelect, useDispatch } from '@wordpress/data';
-import {
-	BlockBreadcrumb,
-	__experimentalLibrary as Library,
-} from '@wordpress/block-editor';
+import { BlockBreadcrumb } from '@wordpress/block-editor';
 import { Button, ScrollLock, Popover } from '@wordpress/components';
-import {
-	useViewportMatch,
-	__experimentalUseDialog as useDialog,
-} from '@wordpress/compose';
+import { useViewportMatch } from '@wordpress/compose';
 import { PluginArea } from '@wordpress/plugins';
 import { __ } from '@wordpress/i18n';
 import {
@@ -32,7 +27,6 @@ import {
 	store as interfaceStore,
 } from '@wordpress/interface';
 import { useState, useEffect, useCallback } from '@wordpress/element';
-import { close } from '@wordpress/icons';
 import { store as keyboardShortcutsStore } from '@wordpress/keyboard-shortcuts';
 
 /**
@@ -46,6 +40,7 @@ import ManageBlocksModal from '../manage-blocks-modal';
 import PreferencesModal from '../preferences-modal';
 import BrowserURL from '../browser-url';
 import Header from '../header';
+import InserterSidebar from '../secondary-sidebar/inserter-sidebar';
 import SettingsSidebar from '../sidebar/settings-sidebar';
 import MetaBoxes from '../meta-boxes';
 import WelcomeGuide from '../welcome-guide';
@@ -84,13 +79,12 @@ function Layout( { styles } ) {
 		previousShortcut,
 		nextShortcut,
 		hasBlockSelected,
-		showMostUsedBlocks,
 		isInserterOpened,
 		showIconLabels,
 		hasReducedUI,
 		showBlockBreadcrumbs,
 	} = useSelect( ( select ) => {
-		const editorSettings = select( 'core/editor' ).getEditorSettings();
+		const editorSettings = select( editorStore ).getEditorSettings();
 		return {
 			hasFixedToolbar: select( editPostStore ).isFeatureActive(
 				'fixedToolbar'
@@ -102,9 +96,6 @@ function Layout( { styles } ) {
 			),
 			isFullscreenActive: select( editPostStore ).isFeatureActive(
 				'fullscreenMode'
-			),
-			showMostUsedBlocks: select( editPostStore ).isFeatureActive(
-				'mostUsedBlocks'
 			),
 			isInserterOpened: select( editPostStore ).isInserterOpened(),
 			mode: select( editPostStore ).getEditorMode(),
@@ -167,9 +158,13 @@ function Layout( { styles } ) {
 		},
 		[ entitiesSavedStatesCallback ]
 	);
-	const [ inserterDialogRef, inserterDialogProps ] = useDialog( {
-		onClose: () => setIsInserterOpened( false ),
-	} );
+
+	const secondarySidebar = () => {
+		if ( mode === 'visual' && isInserterOpened ) {
+			return <InserterSidebar />;
+		}
+		return null;
+	};
 
 	return (
 		<>
@@ -191,32 +186,7 @@ function Layout( { styles } ) {
 						}
 					/>
 				}
-				secondarySidebar={
-					mode === 'visual' &&
-					isInserterOpened && (
-						<div
-							ref={ inserterDialogRef }
-							{ ...inserterDialogProps }
-							className="edit-post-layout__inserter-panel"
-						>
-							<div className="edit-post-layout__inserter-panel-header">
-								<Button
-									icon={ close }
-									onClick={ () =>
-										setIsInserterOpened( false )
-									}
-								/>
-							</div>
-							<div className="edit-post-layout__inserter-panel-content">
-								<Library
-									showMostUsedBlocks={ showMostUsedBlocks }
-									showInserterHelpPanel
-									shouldFocusBlock={ isMobileViewport }
-								/>
-							</div>
-						</div>
-					)
-				}
+				secondarySidebar={ secondarySidebar() }
 				sidebar={
 					( ! isMobileViewport || sidebarIsOpened ) && (
 						<>
