@@ -1,3 +1,7 @@
+// Consider the block appender to be a child block of its own, which also has
+// this class.
+const BLOCK_SELECTOR = '.wp-block';
+
 /**
  * Given a block client ID, returns the corresponding DOM node for the block,
  * if exists. As much as possible, this helper should be avoided, and used only
@@ -40,10 +44,7 @@ export function getBlockPreviewContainerDOMNode( clientId, doc ) {
  * @return {boolean} Whether elements are in the same block.
  */
 export function isInSameBlock( a, b ) {
-	return (
-		a.closest( '.block-editor-block-list__block' ) ===
-		b.closest( '.block-editor-block-list__block' )
-	);
+	return a.closest( BLOCK_SELECTOR ) === b.closest( BLOCK_SELECTOR );
 }
 
 /**
@@ -57,7 +58,7 @@ export function isInSameBlock( a, b ) {
  *                   children.
  */
 export function isInsideRootBlock( blockElement, element ) {
-	const parentBlock = element.closest( '.block-editor-block-list__block' );
+	const parentBlock = element.closest( BLOCK_SELECTOR );
 	return parentBlock === blockElement;
 }
 
@@ -79,7 +80,7 @@ export function getBlockClientId( node ) {
 	}
 
 	const elementNode = /** @type {Element} */ ( node );
-	const blockNode = elementNode.closest( '.block-editor-block-list__block' );
+	const blockNode = elementNode.closest( BLOCK_SELECTOR );
 
 	if ( ! blockNode ) {
 		return;
