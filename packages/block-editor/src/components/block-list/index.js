@@ -122,18 +122,16 @@ function Items( {
 
 	return (
 		<LayoutProvider value={ layout }>
-			{ order.map( ( clientId, index ) => (
-				<AsyncModeProvider
-					key={ clientId }
-					value={
-						// Only provide data asynchronously if the block is not
-						// visible and not selected.
-						! intersectingBlocks.has( clientId ) &&
-						! selectedBlocks.includes( clientId )
-					}
-				>
-					<IntersectionObserver.Provider
-						value={ intersectionObserver }
+			<IntersectionObserver.Provider value={ intersectionObserver }>
+				{ order.map( ( clientId, index ) => (
+					<AsyncModeProvider
+						key={ clientId }
+						value={
+							// Only provide data asynchronously if the block is
+							// not visible and not selected.
+							! intersectingBlocks.has( clientId ) &&
+							! selectedBlocks.includes( clientId )
+						}
 					>
 						<BlockListBlock
 							rootClientId={ rootClientId }
@@ -143,9 +141,9 @@ function Items( {
 							// otherwise there might be a small delay to trigger the animation.
 							index={ index }
 						/>
-					</IntersectionObserver.Provider>
-				</AsyncModeProvider>
-			) ) }
+					</AsyncModeProvider>
+				) ) }
+			</IntersectionObserver.Provider>
 			{ order.length < 1 && placeholder }
 			<BlockListAppender
 				tagName={ __experimentalAppenderTagName }
