@@ -95,7 +95,7 @@ function Items( {
 			return;
 		}
 
-		function callback( entries ) {
+		return new Observer( ( entries ) => {
 			setIntersectingBlocks( ( oldIntersectingBlocks ) => {
 				const newIntersectingBlocks = new Set( oldIntersectingBlocks );
 				for ( const entry of entries ) {
@@ -105,25 +105,16 @@ function Items( {
 				}
 				return newIntersectingBlocks;
 			} );
-		}
-
-		return new Observer( callback, { threshold: 0.1 } );
+		} );
 	}, [ setIntersectingBlocks ] );
 	const { order, selectedBlocks } = useSelect(
 		( select ) => {
-			const {
-				getBlockOrder,
-				getSelectedBlockClientId,
-				getMultiSelectedBlockClientIds,
-				hasMultiSelection,
-			} = select( blockEditorStore );
+			const { getBlockOrder, getSelectedBlockClientIds } = select(
+				blockEditorStore
+			);
 			return {
 				order: getBlockOrder( rootClientId ),
-				selectedBlocks: new Set(
-					hasMultiSelection()
-						? getMultiSelectedBlockClientIds()
-						: [ getSelectedBlockClientId() ]
-				),
+				selectedBlocks: getSelectedBlockClientIds(),
 			};
 		},
 		[ rootClientId ]
@@ -135,8 +126,10 @@ function Items( {
 				<AsyncModeProvider
 					key={ clientId }
 					value={
+						// Only provide data asynchronously if the block is not
+						// visible and not selected.
 						! intersectingBlocks.has( clientId ) &&
-						! selectedBlocks.has( clientId )
+						! selectedBlocks.includes( clientId )
 					}
 				>
 					<IntersectionObserver.Provider
