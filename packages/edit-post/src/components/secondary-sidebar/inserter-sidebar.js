@@ -16,8 +16,10 @@ import {
 import { store as editPostStore } from '../../store';
 
 export default function InserterSidebar() {
-	const showMostUsedBlocks = useSelect( ( select ) =>
-		select( editPostStore ).isFeatureActive( 'mostUsedBlocks' )
+	const showMostUsedBlocks = useSelect(
+		( select ) =>
+			select( editPostStore ).isFeatureActive( 'mostUsedBlocks' ),
+		[]
 	);
 	const { setIsInserterOpened } = useDispatch( editPostStore );
 
