@@ -118,7 +118,7 @@ export default function Sidebar() {
 			isGeneralSidebarOpen
 		) {
 			enableComplementaryArea(
-				editWidgetsStore,
+				'core/edit-widgets',
 				BLOCK_INSPECTOR_IDENTIFIER
 			);
 		}
@@ -128,7 +128,7 @@ export default function Sidebar() {
 			isGeneralSidebarOpen
 		) {
 			enableComplementaryArea(
-				editWidgetsStore,
+				'core/edit-widgets',
 				WIDGET_AREAS_IDENTIFIER
 			);
 		}
