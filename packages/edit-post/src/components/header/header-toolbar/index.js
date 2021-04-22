@@ -88,7 +88,7 @@ function HeaderToolbar() {
 			isTemplateMode: isEditingTemplate(),
 			isListViewOpen: isListViewOpened(),
 			listViewShortcut: getShortcutRepresentation(
-				'core/edit-post/toggle-list-view'
+				'core/edit-post/toggle-block-navigation'
 			),
 		};
 	}, [] );
