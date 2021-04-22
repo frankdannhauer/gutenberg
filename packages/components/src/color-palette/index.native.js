@@ -7,7 +7,6 @@ import {
 	View,
 	Animated,
 	Easing,
-	Dimensions,
 	Platform,
 	Text,
 } from 'react-native';
@@ -26,9 +25,8 @@ import ColorIndicator from '../color-indicator';
 import { colorsUtils } from '../mobile/color-settings/utils';
 
 const ANIMATION_DURATION = 200;
+const SEGMENT_SWITCH_DELAY = 200;
 
-let contentWidth = 0;
-let scrollPosition = 0;
 let customIndicatorWidth = 0;
 
 function ColorPalette( {
@@ -100,14 +98,23 @@ function ColorPalette( {
 	const customText = __( 'Custom' );
 
 	useEffect( () => {
+		const delayedScroll = setTimeout( () => {
+			resetScrollPosition();
+		}, SEGMENT_SWITCH_DELAY );
+		return () => {
+			clearTimeout( delayedScroll );
+		};
+	}, [ currentSegment ] );
+
+	function resetScrollPosition() {
 		if ( scrollViewRef.current ) {
 			if ( isSelectedCustom() ) {
-				scrollViewRef.current.scrollToEnd();
+				scrollViewRef.current.scrollToEnd( { animated: ! isIOS } );
 			} else {
 				scrollViewRef.current.scrollTo( { x: 0, y: 0 } );
 			}
 		}
-	}, [ currentSegment ] );
+	}
 
 	function isSelectedCustom() {
 		const isWithinColors =
@@ -153,40 +160,9 @@ function ColorPalette( {
 		outputRange: [ 1, 0.7, 1 ],
 	} );
 
-	function deselectCustomGradient() {
-		const { width } = Dimensions.get( 'window' );
-		const isVisible =
-			contentWidth - scrollPosition - customIndicatorWidth < width;
-
-		if ( isCustomGradientColor ) {
-			if ( ! isIOS ) {
-				// Scroll position on Android doesn't adjust automatically when removing the last item from the horizontal list.
-				// https://github.com/facebook/react-native/issues/27504
-				// Workaround: Force the scroll when deselecting custom gradient color and when custom indicator is visible on layout.
-				if (
-					isCustomGradientColor &&
-					isVisible &&
-					scrollViewRef.current
-				) {
-					scrollViewRef.current.scrollTo( {
-						x: scrollPosition - customIndicatorWidth,
-					} );
-				}
-			}
-		}
-	}
-
 	function onColorPress( color ) {
-		deselectCustomGradient();
 		performAnimation( color );
 		setColor( color );
-	}
-
-	function onContentSizeChange( width ) {
-		contentWidth = width;
-		if ( isSelectedCustom() && scrollViewRef.current ) {
-			scrollViewRef.current.scrollToEnd( { animated: ! isIOS } );
-		}
 	}
 
 	function onCustomIndicatorLayout( { nativeEvent } ) {
@@ -194,10 +170,6 @@ function ColorPalette( {
 		if ( width !== customIndicatorWidth ) {
 			customIndicatorWidth = width;
 		}
-	}
-
-	function onScroll( { nativeEvent } ) {
-		scrollPosition = nativeEvent.contentOffset.x;
 	}
 
 	const verticalSeparatorStyle = usePreferredColorSchemeStyle(
@@ -224,8 +196,7 @@ function ColorPalette( {
 			keyboardShouldPersistTaps="always"
 			disableScrollViewPanResponder
 			scrollEventThrottle={ 16 }
-			onScroll={ onScroll }
-			onContentSizeChange={ onContentSizeChange }
+			onContentSizeChange={ resetScrollPosition }
 			onScrollBeginDrag={ () => shouldEnableBottomSheetScroll( false ) }
 			onScrollEndDrag={ () => shouldEnableBottomSheetScroll( true ) }
 			ref={ scrollViewRef }
